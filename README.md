@@ -16,7 +16,7 @@ A reusable template for SST/Next.js projects with a pre-configured AI agent team
 
 ## How it all fits together
 
-Plugins are the distribution unit — each one bundles skills, agents, hooks, MCP configs, and slash commands into a single installable package. When installed, everything merges into `.claude/` and becomes available to the main agent at runtime.
+Plugins are the distribution unit — each one bundles skills, agents, hooks, MCP configs, and slash commands into a single installable package. When installed, everything merges into `.github/` and becomes available to the main agent at runtime.
 
 The main agent orchestrates everything: it reads skills for context-aware guidance, delegates subtasks to subagents, fires lifecycle hooks (which can inspect or block actions), and reaches out to MCP servers and local tools to actually execute work.
 
@@ -24,7 +24,7 @@ The main agent orchestrates everything: it reads skills for context-aware guidan
 flowchart TD
   MKTPLACE["🛒 Marketplace<br/>Hosts & distributes plugins"]
 
-  subgraph PLUGIN["Plugin bundle  (installs into .claude/)"]
+  subgraph PLUGIN["Plugin bundle  (installs into .github/)"]
     direction LR
     SK["Skills<br/>SKILL.md files"]
     AG["Agents<br/>Subagent definitions"]
@@ -37,7 +37,7 @@ flowchart TD
     direction TB
     AGENT["Main agent<br/>Orchestrates & reasons"]
 
-    subgraph ACTIVATED["Activated from .claude/"]
+    subgraph ACTIVATED["Activated from .github/"]
       direction LR
       SKR["Skills<br/>auto-invoked by context"]
       AGR["Subagents<br/>parallel subtasks"]
@@ -52,8 +52,8 @@ flowchart TD
     end
   end
 
-  MKTPLACE -->|"claude plugin install"| PLUGIN
-  PLUGIN -->|"merges into .claude/"| AGENT
+  MKTPLACE -->|"coplilot plugin install"| PLUGIN
+  PLUGIN -->|"merges into .github/"| AGENT
 
   AGENT -->|"reads context"| SKR
   AGENT -->|"delegates Task()"| AGR
@@ -202,6 +202,18 @@ MCP servers live in `~/.copilot/mcp-config.json`. Below is a recommended configu
         "AWS_REGION=us-east-1"
       ]
     },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.ai/",
+      "headers": {
+        "Authorization": "Bearer YOUR_CONTEXT7_API_KEY"
+      }
+    },
+    "chrome-devtools": {
+      "type": "local",
+      "command": "npx",
+      "args": ["chrome-devtools-mcp@latest"]
+    },
     "dbhub": {
       "type": "stdio",
       "command": "npx",
@@ -248,6 +260,18 @@ VS Code Copilot Chat uses a workspace-level MCP config at `.vscode/mcp.json`. Cr
         "--metadata",
         "AWS_REGION=us-east-1"
       ]
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.ai/",
+      "headers": {
+        "Authorization": "Bearer YOUR_CONTEXT7_API_KEY"
+      }
+    },
+    "chrome-devtools": {
+      "type": "process",
+      "command": "npx",
+      "args": ["chrome-devtools-mcp@latest"]
     },
     "dbhub": {
       "type": "process",
