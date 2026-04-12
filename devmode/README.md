@@ -1,32 +1,50 @@
-# devmode — Claude Code Plugin
+# devmode
 
-A snappy development mode switcher for Claude Code. Pick your workflow with a quick-pick submenu — no repo files are ever mutated. Includes a full skill-first workflow system with builder and reviewer agents and 7 core skills.
+`devmode` is a Claude Code plugin for switching the **development flow** Claude should follow in the current session.
 
-## Features
+## Problem Statement
 
-- **`/devmode:dm`** — opens an instant mode picker (like the model switcher)
-- **Persistent state** — stored in `~/.claude/plugins/data/devmode/mode.json`, never in your repo
-- **Auto-injected context** — active mode + guidelines + agent/skill roster injected at every session start
-- **CLI helper** — `dm` binary available in any Bash tool call while the plugin is enabled
-- **`/devmode:builder`** — implementation agent with skill-first execution loop
-- **`/devmode:reviewer`** — review agent with systematic evaluation methodology
-- **7 core skills** — architect, code-review, coder, gatekeeper, librarian, orchestrator, tester
+Claude Code users often want to change **how** Claude works — for example:
 
-## Modes
+- tests-first vs direct implementation
+- rapid iteration vs stricter process
+- ideation-only vs implementation
 
-| Mode | Description |
-|------|-------------|
-| `og` | implement → verify → review |
-| `tdd` | tests-first (red/green/refactor) |
-| `vibe` | fast iteration with reduced ceremony |
-| `poc` | exploratory spike, not production-ready |
-| `sdd` | spec-driven development |
-| `brainstorm` | explore ideas without writing code |
-| `oneoff` | directly implement the user's request |
+The problem is that changing workflow usually means overhauling prompts, editing repo docs, or maintaining custom local setup.
+
+`devmode` solves that by letting the user **toggle their dev flow quickly** without reworking the rest of their development environment. The plugin stores the active mode outside the repo, injects the selected workflow into the session, and keeps the user-facing control surface simple.
+
+## Design
+
+`devmode` is built around four ideas:
+
+1. **Fast mode switching**
+   - `/devmode:dm` provides a quick mode picker or direct `set/status/list` commands.
+
+2. **No repo mutation**
+   - The active mode is stored in `${CLAUDE_PLUGIN_DATA}/mode.json`, not in tracked project files.
+
+3. **Workflow injection**
+   - On session start, the plugin injects the active mode and the behavior Claude should follow for that mode.
+
+4. **Mode-aware execution**
+   - In implementation-oriented modes, Claude routes work through the builder/reviewer workflow.
+   - In ideation-oriented modes such as `brainstorm`, Claude stays out of code-writing mode.
+
+### Main Components
+
+| Component | Purpose |
+| --- | --- |
+| `skills/dm/` | Mode picker and mode management command |
+| `agents/builder.md` | Implementation workflow agent |
+| `agents/reviewer.md` | Review workflow agent |
+| `scripts/inject-mode.sh` | Injects selected mode and instructions into the session |
+| `scripts/ensure-mode.sh` | Reminds the user to choose a mode if none is set |
+| `bin/dm` | Lightweight CLI helper for reading/writing mode state |
 
 ## Installation
 
-### From this repository's marketplace
+### From the `plugin-forge` marketplace
 
 ```text
 /plugin marketplace add drmaas/plugin-forge
@@ -34,155 +52,80 @@ A snappy development mode switcher for Claude Code. Pick your workflow with a qu
 /reload-plugins
 ```
 
-### From a local directory (development/testing)
+### From a local directory
 
 ```bash
 claude --plugin-dir ./devmode
 ```
 
-### From another marketplace
-
-If `devmode` is later published to a remote marketplace, install it with:
-
-```text
-/plugin install devmode@<marketplace-name>
-```
-
 ## Usage
 
-### Pick a mode (submenu)
+### 1. Choose a mode
 
-```
+Use the picker:
+
+```text
 /devmode:dm
 ```
 
-Presents a radio-button form. The current mode is pre-selected.
+Or set one directly:
 
-### Set mode directly
-
-```
-/devmode:dm set sdd
+```text
+/devmode:dm set oneoff
 /devmode:dm set tdd
 /devmode:dm set brainstorm
-/devmode:dm set oneoff
 ```
 
-### Check current mode
+Check the current mode:
 
-```
+```text
 /devmode:dm status
 ```
 
-### List all modes
+List all modes:
 
-```
+```text
 /devmode:dm list
 ```
 
-### CLI (in Bash tool or terminal)
+### 2. Give Claude a task
+
+After a mode is set, just work normally. The plugin injects the selected flow into the session.
+
+### 3. Let the mode shape behavior
+
+| Mode | Behavior |
+| --- | --- |
+| `og` | implement, then verify, then review |
+| `tdd` | write tests first, implement to green, then review |
+| `vibe` | optimize for fast iteration with lighter process |
+| `poc` | explore quickly without claiming production readiness |
+| `sdd` | follow requirements → spec → plan → implementation → review |
+| `brainstorm` | explore ideas and tradeoffs without writing code |
+| `oneoff` | directly implement the user’s request with minimal ceremony |
+
+### Builder and reviewer behavior
+
+For implementation-oriented modes, Claude uses:
+
+- `/devmode:builder` for implementation
+- `/devmode:reviewer` for review
+
+These are part of the workflow; users generally do **not** invoke them directly.
+
+### CLI helper
+
+The plugin also exposes a `dm` helper in Bash-enabled contexts:
 
 ```bash
 dm status
 dm list
 dm set sdd
 dm --json status
-dm --json set tdd
 ```
 
-### Use the workflow
+## Notes
 
-Once a mode is set, just give Claude a task. It will automatically:
-1. Delegate implementation to `/devmode:builder`
-2. Builder delegates review to `/devmode:reviewer` when ready
-3. Reviewer returns a verdict; builder iterates if needed
-
-You don't invoke builder or reviewer directly.
-
-## Agents
-
-The builder and reviewer agents are invoked automatically by Claude based on the active mode — you don't call them directly.
-
-### `/devmode:builder`
-
-Invoked by Claude when implementation work is needed. Runs a skill-first execution loop:
-
-1. Analyze → 2. Select skills → 3. Implement → 4. Validate → 5. Delegate to reviewer
-
-Adapts behavior per active mode (og, tdd, vibe, poc, sdd, brainstorm, oneoff).
-
-### `/devmode:reviewer`
-
-Invoked by the builder when implementation is ready for review. Uses the `/devmode:code-review` skill and issues one of:
-- **Approve**
-- **Approve with suggestions**
-- **Request changes** (returns to builder)
-
-## Skills
-
-All skills are namespaced under `/devmode:`. They load automatically based on context, or you can name them explicitly.
-
-| Skill | When to use |
-|-------|-------------|
-| `/devmode:orchestrator` | Multi-step or cross-module work |
-| `/devmode:librarian`    | Navigating unfamiliar code, tracing data flows |
-| `/devmode:coder`        | Core implementation and refactoring |
-| `/devmode:tester`       | Writing or updating tests, TDD cycles |
-| `/devmode:gatekeeper`   | Pre-handoff quality gate validation |
-| `/devmode:architect`    | System design and architectural decisions |
-| `/devmode:code-review`  | Full code review methodology (used by reviewer) |
-
-**Not included** (install separately if needed):
-- `playwright-cli` — requires the `playwright-cli` binary
-- `ux-designer` — domain-specific, optional for frontend work
-
-## How It Works
-
-1. **`bin/dm`** — standalone bash script that reads/writes `$CLAUDE_PLUGIN_DATA/mode.json`. No `jq` required.
-2. **`skills/dm/SKILL.md`** — slash command that uses the `ask_user` enum picker, then calls `dm set`.
-3. **`agents/builder.md`** — builder agent with mode-aware skill-first execution loop.
-4. **`agents/reviewer.md`** — reviewer agent that loads the code-review skill.
-5. **`skills/`** — 8 skills total: dm + 7 core workflow skills.
-6. **`hooks/hooks.json`** — two hooks:
-   - `SessionStart`: injects current mode + guidelines + agent/skill roster
-   - `UserPromptSubmit`: reminds you to set a mode if none is configured (only fires once, until a mode is set)
-7. **`scripts/inject-mode.sh`** — formats the mode context, agent names, and skill table for Claude
-8. **`scripts/ensure-mode.sh`** — silent when mode is set, reminder when it isn't
-
-## Development
-
-```bash
-# Test the CLI helper locally
-export CLAUDE_PLUGIN_DATA=/tmp/devmode-test
-./devmode/bin/dm set sdd
-./devmode/bin/dm status
-./devmode/bin/dm list
-./devmode/bin/dm --json status
-
-# Test hooks
-CLAUDE_PLUGIN_DATA=/tmp/devmode-test CLAUDE_PLUGIN_ROOT=./devmode ./devmode/scripts/inject-mode.sh
-CLAUDE_PLUGIN_DATA=/tmp/test-no-mode CLAUDE_PLUGIN_ROOT=./devmode ./devmode/scripts/ensure-mode.sh
-
-# Load the plugin in Claude Code
-claude --plugin-dir ./devmode
-```
-
-## Packaging for Remote Users
-
-`devmode` is packaged for remote installation by listing it in the repo root marketplace catalog:
-
-- Plugin manifest: `devmode/.claude-plugin/plugin.json`
-- Marketplace entry: `.claude-plugin/marketplace.json`
-
-For a release:
-
-1. Update `devmode/.claude-plugin/plugin.json`
-2. Update the matching entry in `.claude-plugin/marketplace.json` if metadata changed
-3. Push the repository so remote users can install or update through `/plugin`
-
-## Contributing
-
-Contributions welcome. Open a PR with a clear description of the change and why it's needed.
-
-## License
-
-MIT — see [LICENSE](./LICENSE)
+- `brainstorm` is explicitly non-coding mode.
+- `oneoff` is explicitly low-ceremony execution mode.
+- Detailed implementation notes and future changes should stay with the plugin source rather than the top-level repo README.

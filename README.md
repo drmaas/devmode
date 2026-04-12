@@ -1,89 +1,41 @@
 # plugin-forge
 
-A generic, skill-first template for configuring Claude Code workflows with clear ownership boundaries and low token overhead.
+`plugin-forge` is a repository of installable **Claude Code productivity plugins**.
 
-This repository also acts as a **Claude plugin marketplace repo**: it contains installable plugins and a root marketplace catalog so remote users can add the repo with `/plugin marketplace add` and install plugins with `/plugin install`.
+The top-level README is intentionally short:
 
-## Project Overview
+- what this repo is for
+- what plugins it contains
+- how to install them
+- how to use each plugin at a high level
 
-This repository provides a reusable baseline for agent-driven development with a two-owner model supplied by the `devmode` plugin:
+Detailed behavior, design, and implementation notes live in each plugin directory.
 
-- `/devmode:builder` owns implementation.
-- `/devmode:reviewer` owns review.
+## What This Repo Contains
 
-Specialized work is handled through plugin skills loaded by the active owner rather than adding many permanent owner roles.
+This repository ships a Claude plugin marketplace catalog at `.claude-plugin/marketplace.json` and the plugins listed in it.
 
-The canonical operating policy lives in `CLAUDE.md`. Development mode selection, mode-specific process guidance, builder/reviewer agents, and workflow skills live in `devmode/`.
-
-## Goals
-
-- Keep implementation and review responsibilities separate.
-- Encourage modular, skill-first execution.
-- Make development mode switching fast and non-destructive.
-- Provide a portable template that can be adapted across repositories.
-
-## Design
-
-The template is designed around a small set of principles:
-
-- **Two-owner model:** one owner executes implementation, one owner performs review.
-- **Skill-first specialization:** load only the capabilities needed for the current step.
-- **Plugin-owned modes:** the `devmode` plugin stores active mode outside the repo and injects the process each mode should follow.
-- **Single policy source:** shared workflow policy is centralized in `CLAUDE.md`.
-
-## Plugins in This Repository
+### Plugins
 
 | Plugin | Path | Purpose |
 | --- | --- | --- |
-| `devmode` | `devmode/` | Development mode picker and workflow plugin. Provides `/devmode:dm`, mode-aware hooks, `/devmode:builder`, `/devmode:reviewer`, and the core workflow skills used by those agents. |
+| `devmode` | `devmode/` | Development workflow plugin for switching modes and steering Claude’s execution style. |
 
-**Not plugins:** `.claude/skills/playwright-cli/` and `.claude/skills/ux-designer/` are still standalone project skills, not installable marketplace plugins.
+## Install Plugins from This Repo
 
-## Repository Layout
-
-| File / Directory | Purpose |
-| --- | --- |
-| `.claude-plugin/marketplace.json` | Root marketplace catalog for remote `/plugin marketplace add` installs. |
-| `CLAUDE.md` | Root context and team policy file (single source of truth). |
-| `SOUL.md` | Shared behavioral defaults for all agents. |
-| `devmode/` | Installable Claude plugin containing mode switching, hooks, agents, and core workflow skills. |
-| `.claude/skills/playwright-cli/` | Optional browser automation skill, kept separate from the core workflow plugin. |
-| `.claude/skills/ux-designer/` | Optional UI/UX skill, kept separate from the core workflow plugin. |
-
-## Building and Packaging Plugins
-
-There is no compile step for Claude plugins in this repo. "Build" means assembling a valid plugin directory, validating it locally, and listing it in the root marketplace catalog.
-
-1. Create or update a plugin directory such as `devmode/`.
-2. Ensure the plugin has a manifest at `.claude-plugin/plugin.json`.
-3. Keep the plugin self-contained with its own `README.md`, and any `skills/`, `agents/`, `hooks/`, `bin/`, `.mcp.json`, or `.lsp.json` files it needs.
-4. Bump the plugin version in its `plugin.json` when you ship a new release.
-5. Add or update the plugin entry in the repo's root `.claude-plugin/marketplace.json` so remote users can discover and install it.
-6. Test locally before publishing:
-
-```bash
-claude --plugin-dir ./devmode
-```
-
-Then, inside Claude Code, run:
-
-```text
-/reload-plugins
-```
-
-## Installing Plugins from This Repo
-
-Remote users can install plugins from this repository through Claude Code's plugin manager.
-
-### 1. Add this repo as a marketplace
+### 1. Add this repository as a marketplace
 
 ```text
 /plugin marketplace add drmaas/plugin-forge
 ```
 
-This uses the root `.claude-plugin/marketplace.json` file in the repo.
+### 2. Install a plugin
 
-### 2. Install a plugin from the marketplace
+```text
+/plugin install <plugin-name>@plugin-forge
+```
+
+Example:
 
 ```text
 /plugin install devmode@plugin-forge
@@ -95,15 +47,74 @@ This uses the root `.claude-plugin/marketplace.json` file in the repo.
 /reload-plugins
 ```
 
-After the marketplace is added, users can also browse plugins interactively through `/plugin`:
+You can also browse the marketplace interactively:
 
-1. Open `/plugin`
-2. Go to **Discover**
-3. Choose `devmode`
-4. Install it in the desired scope
+1. Run `/plugin`
+2. Open **Discover**
+3. Choose a plugin from `plugin-forge`
+4. Install it in the scope you want
 
-## Publishing Notes
+## Use the Plugins
 
-- **This repo marketplace** is the direct distribution path for remote users.
-- **Official marketplace publishing** is optional and separate. If a plugin is later published to an external marketplace, users would install it with `/plugin install <plugin-name>@<marketplace-name>`.
-- Marketplace-backed distribution is what makes `/plugin install` work for remote users; a plugin directory by itself is only enough for local development with `--plugin-dir`.
+### `devmode`
+
+**Purpose:** choose how Claude should approach work in the current session.
+
+**What it provides:**
+
+- `/devmode:dm` — mode picker and mode status
+- `/devmode:builder` — implementation agent used automatically for implementation-oriented modes
+- `/devmode:reviewer` — review agent used automatically before final delivery
+
+**How to use it:**
+
+1. Install `devmode`
+2. Set a mode:
+
+```text
+/devmode:dm
+```
+
+or:
+
+```text
+/devmode:dm set oneoff
+```
+
+3. Give Claude a task
+
+The plugin will inject the active mode and its workflow into the session. In implementation-oriented modes, Claude routes work through the builder/reviewer flow automatically.
+
+**Modes currently included:**
+
+- `og`
+- `tdd`
+- `vibe`
+- `poc`
+- `sdd`
+- `brainstorm`
+- `oneoff`
+
+For full details, see [`devmode/README.md`](./devmode/README.md).
+
+## Adding or Updating Plugins
+
+Each plugin should be self-contained in its own directory and include its own `.claude-plugin/plugin.json`.
+
+When adding a plugin to this repository:
+
+1. Create the plugin directory
+2. Add its manifest and files
+3. Add it to `.claude-plugin/marketplace.json`
+4. Document usage in the plugin's own README
+
+There is no compile step for these plugins. Local development is done by loading a plugin directory directly:
+
+```bash
+claude --plugin-dir ./devmode
+```
+
+## More Detail
+
+- Marketplace catalog: [`.claude-plugin/marketplace.json`](./.claude-plugin/marketplace.json)
+- `devmode` plugin docs: [`devmode/README.md`](./devmode/README.md)
