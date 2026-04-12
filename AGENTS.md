@@ -1,485 +1,166 @@
-# AGENTS.md — [PROJECT_NAME]
+# AGENTS.md — Generic Skill-First Team Template
 
-> All agents must read `SOUL.md` before starting work. It defines your personality and behavioral defaults.
+> All agents must read `SOUL.md` before starting work.
 
-## Project Context
-
-### Product Overview
-
-<!-- Replace this section with your product description -->
-
-**What it does:** [Brief description of what the product does]
-
-**Target users:** [Who uses this product]
-
-**Platform:** [Web / Mobile / Desktop / etc.]
-
-#### Product Surfaces
-
-<!-- List the surfaces/apps in this repository -->
-
-- **[App]:** `app.[your-domain].com` — [description]
-- **[Marketing]:** `[your-domain].com` — [description]
+This template intentionally avoids project-specific stack and directory assumptions.
 
 ---
 
-### Tech Stack
+## 1) Project Context (fill in per repository)
 
-> **Update this section when starting a new project.** Everything else in this file derives from these choices.
+Use this section to describe your product and constraints at a high level.
 
-| Layer             | Technology                                                                                            |
-| ----------------- | ----------------------------------------------------------------------------------------------------- |
-| Language          | TypeScript (strict mode)                                                                              |
-| Framework         | Next.js (App Router)                                                                                  |
-| UI Library        | React                                                                                                 |
-| Component Library | [e.g. DaisyUI 5 + custom primitives in `src/components/ui/`]                                         |
-| Styling           | [e.g. Tailwind CSS 4]                                                                                 |
-| Auth              | [e.g. Better Auth, NextAuth, Clerk]                                                                   |
-| Database          | [e.g. Neon Postgres — serverless HTTP in prod, node-postgres locally]                                 |
-| ORM               | [e.g. Drizzle ORM]                                                                                    |
-| Object Storage    | [e.g. AWS S3 / MinIO locally]                                                                         |
-| Email             | [e.g. AWS SES, Resend]                                                                                |
-| Hosting           | AWS (Next.js on Lambda)                                                                               |
-| IaC / Deployment  | SST (Ion)                                                                                             |
-| Background Jobs   | [e.g. Inngest]                                                                                        |
-| Package Manager   | pnpm                                                                                                  |
-| Analytics         | [e.g. PostHog]                                                                                        |
-| Testing           | Vitest + React Testing Library + Playwright                                                           |
-| Linting           | ESLint + Prettier, enforced via Husky pre-commit hooks                                                |
-| Validation        | Zod                                                                                                   |
-| Forms             | React Hook Form + `@hookform/resolvers`                                                               |
+- **What this project does:** [one paragraph]
+- **Primary users:** [who this is for]
+- **Core constraints:** [latency, security, compliance, cost, etc.]
+- **Quality bar:** [definition of done for your team]
 
 ---
 
-### Directory Structure
+## 2) Team Model (separation of concerns)
 
-```
-src/
-├── auth.ts                 # Auth server config
-├── auth-client.ts          # Auth React client
-├── proxy.ts                # Next.js middleware (auth + headers)
-├── app/                    # App Router pages, layouts, and server actions
-│   ├── api/                # Minimal API routes (auth catch-all, webhook handlers)
-│   ├── [feature-a]/        # Feature module
-│   ├── [feature-b]/        # Feature module
-│   ├── account/            # User account settings
-│   ├── onboarding/         # Onboarding flow
-│   └── login/              # Authentication pages
-├── components/
-│   ├── ui/                 # Reusable component primitives (Button, Card, Modal, etc.)
-│   ├── auth/               # Auth-related components
-│   └── *.tsx               # Layout shell, shared components
-├── configs/                # Centralized environment/config objects
-├── db/                     # ORM schema, connection, migrations
-├── hooks/                  # Client-side React hooks
-│   ├── forms/              # useAsyncAction, useFormState
-│   └── ui/                 # useDialog, useFullscreenMode, etc.
-├── lib/                    # Shared utilities (auth helpers, cn(), etc.)
-├── repositories/           # Data access layer
-├── services/               # Business logic layer
-│   ├── domain/             # Per-feature domain services
-│   ├── external/           # Third-party API integrations
-│   ├── factories/          # ServiceContainer singleton (DI wiring)
-│   └── shared/             # Error hierarchy, logger
-└── types/                  # Shared TypeScript types
-```
+This template uses a **two-owner model**:
+
+- `/builder` owns all implementation work.
+- `/reviewer` owns all review work.
+
+No other persistent owner roles are required.
+
+### Routing Rules
+
+- Route implementation tasks to `/builder`.
+- Route correctness/design/security/architecture reviews to `/reviewer`.
+- `/builder` should rely on **skills/commands** for specialized execution instead of proliferating specialist owners.
+- `/reviewer` must publish a clear verdict before final delivery.
+
+### Communications Protocol
+
+- Use explicit handoffs with: owner, goal, files, decisions, validation, blockers, and next action.
+- One owner at a time.
+- Status format: `Status | Changes | Risks/Blockers | Next step`.
+- Final delivery report includes: what changed, files touched, validation outcomes, trade-offs, and follow-ups.
 
 ---
 
-### Architecture Rules
+## 3) Quality Gates (generic)
 
-#### Database Migration Workflow (Required)
+Adapt these to your repository’s actual scripts/tools:
 
-- Always update the data model in `src/db/schema.ts` first.
-- Then run `pnpm db:generate` to create migration files from schema changes.
-- Then run `pnpm db:migrate` to apply migrations locally and verify.
-- NEVER manually create or hand-edit migration files.
-- If a generated migration is incorrect, fix the schema and regenerate instead of writing SQL by hand.
+- **Type safety/static analysis:** run your project’s type/static checks.
+- **Lint/format:** run your project’s lint/format checks.
+- **Tests:** run required tests for the active work mode.
 
-#### Layered Architecture
-
-```
-Server Actions (src/app/**/actions.ts)
-        ↓
-  Domain Services (src/services/domain/)
-        ↓
-  Repositories (src/repositories/)
-        ↓
-  ORM → Database
-```
-
-- **Server Actions** handle auth, call services, catch errors, revalidate paths.
-- **Domain Services** contain business logic, validation, and orchestration. They receive repositories and external services via constructor injection.
-- **Repositories** encapsulate all database queries using the ORM. Each repository takes a `Database` instance in its constructor.
-- **External Services** wrap third-party APIs.
-
-#### Dependency Injection
-
-All services and repositories are wired via a **singleton `ServiceContainer`** (`src/services/factories/service-container.ts`), exported as `services`:
-
-```typescript
-import { services } from "@/services";
-const result = await services.widgetService.create(userId, data);
-```
-
-#### No Custom API Routes
-
-The project uses **server actions** for all data mutations and queries. The only API routes are:
-
-- Auth catch-all (`/api/auth/[...provider]`)
-- Webhook handlers (e.g. `/api/inngest`)
-
-Do not create new API route handlers. Use server actions instead.
-
-#### Error Handling
-
-Typed error hierarchy in `src/services/shared/errors.ts`:
-
-```
-ServiceError
-  ├── NotFoundError
-  ├── UnauthorizedError
-  ├── ValidationError
-  ├── ConflictError
-  └── InternalServerError
-```
-
-Server actions catch `ServiceError` subtypes and re-throw plain `Error` for the client.
+If your repo does not provide one of these gates, document the equivalent verification approach.
 
 ---
 
-### Design Patterns
+## 4) Development Modes (optional)
 
-#### Server Actions
+Use modes only if they are useful for your team:
 
-Co-located in `actions.ts` files next to their route's `page.tsx`:
+- `traditional`: implement, then verify, then review.
+- `tdd`: tests-first (red/green/refactor), then review.
+- `vibe`: fast iteration with reduced ceremony.
+- `poc`: exploratory spike, not production-ready.
+- `sdd` (spec-driven development): requirements → specification → plan → task execution → review.
 
-```typescript
-"use server";
+If you use modes, document where mode is configured in your environment.
 
-import { requireAuthSession } from "@/lib/auth-server-helper";
-import { services } from "@/services";
-import { revalidatePath } from "next/cache";
+### Mode Discovery Rule (session start)
 
-export async function createWidget(data: { name: string }) {
-  const session = await requireAuthSession();
-  const widget = await services.widgetService.create(session.user.id, data);
-  revalidatePath("/widgets");
-  return widget;
-}
-```
+At the start of each coding session, the active owner must do one of the following before implementation:
 
-**Rules:**
+1. **Discover** the current development mode from repository docs/config, or
+2. **Ask** the user to pick a mode if no mode is discoverable.
 
-1. Always start with `"use server"` directive.
-2. Always call `requireAuthSession()` for auth.
-3. Delegate to `services.*` — never call repositories directly.
-4. Catch `ServiceError` subtypes and re-throw as plain `Error`.
-5. Call `revalidatePath()` after mutations.
-6. Re-export domain types from repositories/services as needed.
+Never assume a mode silently.
 
-#### Server Components (Default)
+Preferred source: `docs/modes.md`.
 
-Pages and layouts are async server components that fetch data directly:
+### Execution Continuity Rule (Ralph Loop)
 
-```tsx
-export default async function WidgetsPage() {
-  const session = await requireAuthSession();
-  const widgets = await getWidgets();
-  return <AppLayout>...</AppLayout>;
-}
-```
+Agents should run in a Ralph Loop: continue iterating until the active goal is complete, verified, and either handed off (`/reviewer`) or delivered.
 
-#### Client Components
+- Do not stop at intermediate analysis-only states.
+- On failures, adjust approach and continue the loop.
+- End only when completion criteria are satisfied for the current mode.
 
-Marked with `"use client"`. Used for interactive UI, local state, and browser APIs:
+### Spec-Driven Development (SDD) Guidance
 
-```tsx
-"use client";
+When mode is `sdd`, follow this sequence:
 
-export function WidgetCard({ widget }: { widget: WidgetData }) {
-  const [isLoading, setIsLoading] = useState(false);
-  // ...
-}
-```
+1. **Requirements capture**
+   - Extract explicit goals, constraints, and non-goals.
+   - Record acceptance criteria in testable language.
 
-**State management rules:**
+2. **Specification drafting**
+   - Produce a concise spec with: scope, interfaces/contracts, data model impacts, edge cases, and validation strategy.
+   - Resolve ambiguities before coding.
 
-- Render from server state. Use server actions to mutate.
-- Call `revalidatePath()`/tags on write.
-- Call `router.refresh()` in client components after mutations.
-- Keep client state ephemeral (selection, loading indicators). Do not duplicate persisted data in client state.
-- Avoid synchronous `setState` in `useEffect`.
+3. **Plan formation**
+   - Convert the spec into ordered implementation phases.
+   - Identify dependencies and verification checkpoints per phase.
 
-#### Custom Hooks
+4. **Task decomposition**
+   - Break phases into atomic tasks with clear completion criteria.
+   - Track task state (pending/in progress/completed) and keep exactly one task in progress.
 
-Hooks call server actions directly (imported from `@/app/.../actions`), keeping client state ephemeral while server state is the source of truth.
+5. **Implementation against tasks**
+   - Implement strictly against current task scope.
+   - Update the spec/plan/tasks when scope changes; do not proceed with stale requirements.
 
-Key pattern — `useAsyncAction` wraps async functions with `loading`/`error` state.
-
-#### Repository Classes
-
-```typescript
-export class WidgetRepository {
-  constructor(private db: Database) {}
-
-  async findById(id: string): Promise<WidgetData | null> { ... }
-  async findByUserId(userId: string): Promise<WidgetData[]> { ... }
-  async create(data: CreateWidgetInput): Promise<WidgetData> { ... }
-  async update(id: string, data: Partial<WidgetData>): Promise<WidgetData> { ... }
-}
-```
-
-Each repository defines its own data interfaces and uses the ORM's query API and SQL builder.
-
-#### Service Classes
-
-```typescript
-export class WidgetService {
-  constructor(
-    private widgetRepo: WidgetRepository,
-    private externalService: SomeExternalService
-  ) {}
-
-  async create(userId: string, data: CreateWidgetInput) { ... }
-}
-```
+6. **Verification and review**
+   - Run required quality gates for the repository.
+   - Hand off to `/reviewer` with spec-to-implementation traceability (what requirement each change satisfies).
 
 ---
 
-### Database Conventions
+## 5) Skills & Commands Policy
 
-> ORM and database driver are defined in the **Tech Stack** section.
+- Skills/commands are the preferred mechanism for specialization.
+- Keep active skill set minimal per step to conserve tokens.
+- Favor composable skills over adding new permanent owner roles.
+- Keep review responsibility centralized in `/reviewer` even when review-related skills are used.
 
-- **Schema file:** `src/db/schema.ts` — all table definitions live here.
-- **Primary keys:** `text` type with `crypto.randomUUID()` defaults.
-- **JSON columns:** Use typed JSON columns where supported by the ORM.
-- **Relations:** Define ORM relations for query composition (`join`/`with` clauses).
-- **Migrations:** Generated from schema changes via `pnpm db:generate`. **Do not manually create migration files.**
-- **RLS:** Row-Level Security enabled on all tables, scoped by `userId` or `organizationId`.
+### Built-in Skills
 
-#### Migration Dual-Driver Pattern (Neon + Drizzle)
-
-If using Neon Postgres with Drizzle, use a dual-driver setup: `node-postgres` Pool for local dev, `@neondatabase/serverless` HTTP driver for production. Auto-detect from `DATABASE_URL`.
-
----
-
-### UI & Styling Guidance
-
-> Refer to the **Tech Stack** section above for the component library and styling framework in use.
-
-#### Component Library
-
-Use standardized components from `@/components/ui` for consistent look/feel:
-
-```tsx
-import { Button, Input, Card, Modal, FormField, Badge, Skeleton, Toast } from "@/components/ui";
-```
-
-#### Styling Rules
-
-- Follow the component library and design tokens defined in the tech stack.
-- Use `cn()` utility (from `@/lib`) for conditional class merging via `tailwind-merge`.
-- Ensure accessibility (a11y) compliance.
-
----
-
-### Authentication
-
-> Auth library and providers are defined in the **Tech Stack** section.
-
-- **Server helper:** `requireAuthSession()` from `@/lib/auth-server-helper` — call in every server action and server component that needs auth.
-- **Client:** `authClient` from `@/auth-client` with `useSession()` hook.
-- **Middleware:** `src/proxy.ts` gates all routes — redirects unauthenticated users to `/login` and non-approved users to `/onboarding`.
-- **Auth route:** `/api/auth/[...provider]` catch-all.
-- **Cookie prefix:** `__Secure-[app-name]`.
-
----
-
-### Middleware (proxy.ts)
-
-`src/proxy.ts` acts as Next.js middleware with these responsibilities:
-
-1. **Auth gating** — unauthenticated users redirected to `/login`.
-2. **Onboarding flow** — users not yet approved redirected to `/onboarding`.
-3. **Additional headers** — add any required security or CORS headers here.
-
----
-
-### Testing Conventions
-
-- **Runner:** Vitest with jsdom environment.
-- **Component tests:** React Testing Library — test behavior, not implementation.
-- **Config:** `vitest.config.ts` with `vite-tsconfig-paths` for path aliases.
-- **Setup:** `vitest.setup.ts` for global test configuration.
-- **Test location:** Co-located with source files as `*.test.ts` / `*.test.tsx`.
-- **Mocking:** `vi.mock` or lightweight fetch mocks. Mock external services.
-- **Coverage target:** 80%+ on core logic.
-- **E2E:** Playwright for critical user flows.
-- **Test mode is controlled by `DEV_MODE` in `.github/copilot-instructions.md`.** Do not ask whether to add tests — follow the active mode.
-
----
-
-### TypeScript Rules
-
-- **Strict mode** enabled (`strict: true` in tsconfig).
-- **Avoid `any`**. Use interfaces and utility types.
-- **Path alias:** `@/*` maps to `./src/*`.
-- **Zod** for runtime validation of inputs.
-
----
-
-### Development Workflow
-
-1. Research and plan before implementing.
-2. Make small, reviewable increments.
-3. Make all UX changes look good.
-4. Run `pnpm typecheck && pnpm lint:fix && pnpm test` before completing work.
-5. Update docs (`product-spec.md`, `system-design.md`) if architecture changes.
-6. Keep explanations concise — explain "why" and "how".
-
-#### Commands
-
-| Task          | Command                                   |
-| ------------- | ----------------------------------------- |
-| Dev server    | `pnpm dev`                                |
-| Typecheck     | `pnpm typecheck`                          |
-| Lint + fix    | `pnpm lint:fix`                           |
-| Run tests     | `pnpm test`                               |
-| Build         | `pnpm build`                              |
-| DB migrations | `pnpm db:generate` then `pnpm db:migrate` |
-
----
-
-### Key Files Reference
-
-| File                                          | Purpose                             |
-| --------------------------------------------- | ----------------------------------- |
-| `src/auth.ts`                                 | Auth server configuration           |
-| `src/auth-client.ts`                          | Auth React client                   |
-| `src/proxy.ts`                                | Next.js middleware (auth + headers) |
-| `src/db/schema.ts`                            | ORM database schema                 |
-| `src/db/db.ts`                                | Database connection                 |
-| `src/services/factories/service-container.ts` | DI container singleton              |
-| `src/services/shared/errors.ts`               | Typed error hierarchy               |
-| `src/lib/auth-server-helper.ts`               | `requireAuthSession()` helper       |
-| `src/components/ui/index.ts`                  | UI component barrel export          |
-| `docs/product-spec.md`                        | Full product specification          |
-| `docs/system-design.md`                       | System architecture document        |
-| `docs/ui-reference.md`                        | UI component quick reference        |
-| `AGENTS.md`                                   | Agent team registry and router      |
-
----
-
-## Team Registry
-
-### System Prompt
-
-- Be maximally concise. No intros, no outros, no filler. Answer directly and stop when the task is done.
-- Never announce tool failures, fallbacks, or changes in approach. If something doesn't work, silently try another method and continue.
-
-## Global Routing Rules
-
-- If a user explicitly mentions an agent, route to that agent.
-- Route complex tasks to `@conductor` automatically.
-- Route frontend feature work to `@ux-designer` for UX direction before implementation.
-- If routing to the `@conductor` agent, start your response with: "Initiating the team workflow..." and then hand off the context to the `@conductor`.
-
-## Communications Protocol
-
-- Use explicit handoffs with: owner, goal, files, decisions, validation, blockers, and next owner/action.
-- One task has one owner at a time. Ownership changes only via an explicit handoff.
-- Post status at start, major milestones, and completion.
-- Use status format: `Status | Changes | Risks/Blockers | Next step`.
-- If blocked > 15 minutes or requirements are unclear, escalate to `@conductor`.
-- Before handing to `@gatekeeper`, confirm scope complete, patterns followed, and docs/tests updated as needed.
-- Final user report (from `@conductor`) must include: what changed, files touched, verification results, trade-offs, and follow-ups.
-
-## @conductor
-
-- **Source:** `.github/agents/conductor.agent.md`
-- **Goal:** Manage workflow, break down tasks, and delegate to specialized agents.
-- **Tools:** Terminal, File System, Search.
-
-## @architect
-
-- **Source:** `.github/agents/architect.agent.md`
-- **Goal:** Design system structure, review stack compatibility, and maintain architecture docs.
-- **Context:** Always reference `#AGENTS.md`, `docs/system-design.md`, `docs/product-spec.md`.
-
-## @coder
-
-- **Source:** `.github/agents/coder.agent.md`
-- **Goal:** Write high-quality, typed code following project patterns.
-- **Style:** Server Actions for mutations, component library + styling from tech stack, strict TypeScript, Prettier-compliant.
-
-## @ux-designer
-
-- **Source:** `.github/agents/ux-designer.agent.md`
-- **Goal:** Define frontend UX and visual direction for feature work.
-- **Skill:** Must invoke the `frontend-design` skill (installed via the `frontend-design` plugin) when working on frontend features.
-
-## @reviewer
-
-- **Source:** `.github/agents/reviewer.agent.md`
-- **Goal:** Review code for correctness, consistency with architecture, and adherence to project conventions.
-
-## @tester
-
-- **Source:** `.github/agents/tester.agent.md`
-- **Goal:** Write and verify tests. In `tdd` mode, writes failing tests before `@coder` implements. In `traditional` mode, writes tests after `@coder` finishes. Skipped in `vibe` and `poc` modes.
-- **Active mode:** set via `DEV_MODE` in `.github/copilot-instructions.md`.
-
-## @librarian
-
-- **Source:** `.github/agents/librarian.agent.md`
-- **Goal:** Maintain documentation accuracy and consistency after feature changes.
-
-## @gatekeeper
-
-- **Source:** `.github/agents/gatekeeper.agent.md`
-- **Goal:** Ensure code compiles, passes lint checks, and tests pass.
-- **Commands:** `pnpm typecheck`, `pnpm lint:fix`, `pnpm test`.
-
----
-
-## Plugins & MCPs
-
-### Required Plugins
-
-| Plugin | Purpose |
-| --- | --- |
-| `frontend-design` | Provides the `frontend-design` skill used by `@ux-designer`. **Must be installed.** |
-| `commit-commands` | Provides `commit`, `commit-push-pr`, and `clean_gone` commands. |
-
-### Supplementary Plugins (optional but recommended)
-
-These add extra agents that complement the custom team. AGENTS.md routing rules take priority — use the custom agents (`@architect`, `@reviewer`, etc.) as the default; fall back to plugin agents for specialized or parallel work.
-
-| Plugin | Agents / Skills Added | Overlap With |
+| Skill | Purpose | Load when... |
 | --- | --- | --- |
-| `feature-dev` | `code-architect`, `code-explorer`, `code-reviewer` | Custom team |
-| `software-engineering-team` | `se-security-reviewer`, `se-system-architecture-reviewer`, `se-technical-writer`, `se-ux-ui-designer`, etc. | `@architect`, `@reviewer`, `@librarian`, `@ux-designer` |
-| `pr-review-toolkit` | `code-reviewer`, `review-pr` command | `@reviewer` |
-| `context-engineering` | `context-architect`, `context-map`, `refactor-plan` skills | `@architect` |
-| `code-review` | `code-review` command | `@reviewer` |
-| `frontend-web-dev` | `expert-react-frontend-engineer`, playwright skills | `@ux-designer` |
+| `orchestrator` | Task decomposition, dependency ordering, handoff protocol | Multi-step or cross-module work |
+| `librarian` | Codebase navigation, dependency tracing, knowledge retrieval | Unfamiliar modules, tracing data flows |
+| `coder` | Implementation patterns, refactoring discipline, type safety | Any core coding work |
+| `tester` | Test strategy, test generation, coverage analysis | Writing, updating, or analyzing tests |
+| `gatekeeper` | Quality gate enforcement, verification sequencing | Pre-handoff validation |
+| `architect` | System design, boundary enforcement, tradeoff analysis | Architecture decisions, new module design |
+| `ux-designer` | UI/UX patterns, accessibility, component design | Frontend or user-facing work |
+| `code-review` | Review methodology, severity classification, feedback format | Any code review task |
+| `playwright-cli` | Browser automation, E2E testing, screenshots | Browser-based verification |
 
-### MCPs
+Skills live in `.claude/skills/<name>/SKILL.md` and are auto-discoverable.
 
-These are user-level installs (not committed to the repo). Document project-specific MCPs in your own setup guide.
+---
 
-| MCP | Relevance |
-| --- | --- |
-| `github` | Core — required for GitHub tool access |
-| `playwright` | Browser automation (pairs with the `playwright-cli` repo skill) |
-| `aws-mcp` | Useful for SST/AWS deployment work |
-| `dbhub` | Useful for database introspection and queries |
+## 6) Owner Definitions
 
-### Playwright Note
+### `/builder`
 
-Two browser automation mechanisms may be available:
-- **`playwright` MCP** — live browser tools (`browser_navigate`, `browser_click`, etc.); installed by the user
-- **`playwright-cli` skill** — in-repo skill for agents that don't have the MCP
+- **Source:** `.claude/commands/builder.md`
+- **Goal:** Execute end-to-end implementation with skill-first workflow.
 
-They're complementary. Prefer the MCP when available; the skill is the fallback.
+### `/reviewer`
+
+- **Source:** `.claude/commands/reviewer.md`
+- **Goal:** Serve as sole review authority.
+- **Scope:** Reviews only; no implementation ownership.
+
+---
+
+## 7) Customization Checklist
+
+When applying this template to a new repository:
+
+1. Fill in **Project Context**.
+2. Define concrete **quality gate commands** for this repo.
+3. Define whether **development modes** are used and where configured.
+4. Keep `.claude/commands/` focused on `builder` and `reviewer`.
+5. Add only the skills your team actually uses.
