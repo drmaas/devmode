@@ -1,6 +1,6 @@
 ---
-name: code-review
 description: Systematic code review methodology — evaluation criteria, severity classification, architecture compliance, security analysis, and actionable feedback. Load for any review task.
+user-invocable: false
 ---
 
 # Code Review
@@ -9,7 +9,7 @@ Systematic evaluation of code changes for correctness, safety, maintainability, 
 
 ## When to Load This Skill
 
-- Reviewing a pull request or changeset from `/devmode:builder`.
+- Reviewing a pull request or changeset from `devmode-builder`.
 - Evaluating architecture compliance of proposed changes.
 - Security review of new endpoints, auth flows, or data handling.
 - Assessing whether changes follow established patterns.

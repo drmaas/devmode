@@ -1,6 +1,6 @@
 ---
-name: coder
 description: Implementation patterns, code generation conventions, refactoring discipline, and production-quality coding practices. Load for any core coding work — new features, modifications, or refactoring.
+user-invocable: false
 ---
 
 # Coder

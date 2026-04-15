@@ -1,6 +1,6 @@
 ---
-name: orchestrator
 description: Task decomposition, dependency ordering, parallel execution planning, and handoff protocol. Load when work involves multiple steps, cross-module changes, or coordinated delivery.
+user-invocable: false
 ---
 
 # Orchestrator

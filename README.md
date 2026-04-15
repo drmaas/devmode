@@ -1,115 +1,100 @@
-# plugin-forge
+# devmode
 
-`plugin-forge` is a marketplace repository of installable Claude Code productivity plugins.
+`devmode` is a standalone Claude Code workflow tool.
 
-Use it when you want to improve developer workflow without rewriting repo instructions or custom prompts.
+It gives you:
 
-## Quick Start
+- a global `devmode` CLI on `PATH`
+- a repo installer that drops the needed `.claude/` assets into any repository
+- mode-based execution (`og`, `tdd`, `vibe`, `poc`, `sdd`, `brainstorm`, `oneoff`)
+- builder/reviewer routing with persistent mode state outside the repo
 
-```text
-/plugin marketplace add drmaas/plugin-forge
-/plugin install devmode@plugin-forge
-/reload-plugins
+## Install the CLI
+
+From a clone of this repository:
+
+```bash
+./install.sh
 ```
 
-Then choose a mode:
+That installs a global `devmode` wrapper and a local share directory under `~/.local` by default.
+
+## Install devmode into a repository
+
+```bash
+devmode install /path/to/repo
+```
+
+If the target repo does not already have a `CLAUDE.md`, `devmode` creates one.
+
+If the target repo already has a `CLAUDE.md`, `devmode` leaves it alone and writes `.claude/rules/devmode.md` instead.
+
+## Uninstall
+
+Remove devmode from a repository:
+
+```bash
+devmode uninstall /path/to/repo
+```
+
+That removes the devmode-managed `.claude/` assets, removes the devmode hook entries from `.claude/settings.json`, and deletes `CLAUDE.md` only when it exactly matches the generated devmode template.
+
+Remove the global CLI install:
+
+```bash
+devmode uninstall --global
+```
+
+You can also remove the global install directly from this repository:
+
+```bash
+./install.sh uninstall
+```
+
+## Use devmode
+
+Inside an installed repository:
 
 ```text
 /devmode:dm
-```
-
-## What This Repo Provides
-
-This repository ships:
-
-- a marketplace catalog at `.claude-plugin/marketplace.json`
-- installable plugins listed in that catalog
-
-### Available Plugins
-
-| Plugin | Path | Purpose |
-| --- | --- | --- |
-| `devmode` | `devmode/` | Switch Claude execution style by mode (`og`, `tdd`, `vibe`, `poc`, `sdd`, `brainstorm`, `oneoff`). |
-
-## Install from Marketplace
-
-1. Add this repository as a marketplace:
-
-```text
-/plugin marketplace add drmaas/plugin-forge
-```
-
-2. Install a plugin:
-
-```text
-/plugin install <plugin-name>@plugin-forge
-```
-
-Example:
-
-```text
-/plugin install devmode@plugin-forge
-```
-
-3. Reload plugins in the current session:
-
-```text
-/reload-plugins
-```
-
-You can also browse interactively:
-
-1. Run `/plugin`.
-2. Open **Discover**.
-3. Select `plugin-forge`.
-4. Install the plugin in your desired scope.
-
-## Use `devmode`
-
-`devmode` controls how Claude executes work in the current session.
-
-Core command:
-
-```text
-/devmode:dm
-```
-
-Useful direct commands:
-
-```text
 /devmode:dm status
 /devmode:dm list
 /devmode:dm set oneoff
 ```
 
-Implementation-oriented modes route through builder and reviewer automatically. `brainstorm` mode stays non-coding.
-
-For full mode-by-mode flow details, Ralph Loop (Ralph mode) behavior, and troubleshooting, see [devmode/README.md](./devmode/README.md).
-
-## Local Development (Plugin Authors)
-
-Each plugin should be self-contained in its own directory and include `.claude-plugin/plugin.json`.
-
-When adding or updating a plugin in this repository:
-
-1. Create or update the plugin directory.
-2. Add or update plugin manifest and files.
-3. Update `.claude-plugin/marketplace.json`.
-4. Update that plugin's own README.
-
-Run a local plugin directory directly:
+From the shell:
 
 ```bash
-claude --plugin-dir ./devmode
+devmode status
+devmode list
+devmode set og
+devmode explain sdd
+devmode uninstall .
 ```
 
-## Troubleshooting
+Implementation-oriented modes route through `devmode-builder` and `devmode-reviewer`. `brainstorm` stays non-coding.
 
-- Plugin installed but behavior did not change: run `/reload-plugins`.
-- Not sure which mode is active: run `/devmode:dm status`.
-- Need full plugin behavior details: read [devmode/README.md](./devmode/README.md).
+## What gets installed into the target repo
 
-## References
+`devmode install` writes:
 
-- Marketplace catalog: [.claude-plugin/marketplace.json](./.claude-plugin/marketplace.json)
-- `devmode` docs: [devmode/README.md](./devmode/README.md)
+- `.claude/commands/devmode/dm.md`
+- `.claude/skills/devmode-*`
+- `.claude/agents/devmode-*.md`
+- `.claude/settings.json` hook entries that call the global `devmode` CLI
+- `CLAUDE.md` or `.claude/rules/devmode.md`
+
+## Repository layout
+
+This repository is the product source:
+
+- `bin/` - global CLI and mode helper
+- `commands/` - installed project command source
+- `skills/` - installed internal skill source
+- `agents/` - installed subagent source
+- `templates/` - generated instruction files for target repos
+
+## Notes
+
+- Mode state is stored outside repositories.
+- Installed hooks call the global `devmode` binary, so there is no plugin-root path resolution problem anymore.

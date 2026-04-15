@@ -1,6 +1,6 @@
 ---
-name: gatekeeper
 description: Quality gate enforcement, lint/type/build verification, pre-handoff validation, and release readiness checks. Load before handoff to review or delivery.
+user-invocable: false
 ---
 
 # Gatekeeper
@@ -9,7 +9,7 @@ Enforcer of quality standards. Nothing ships without passing every gate.
 
 ## When to Load This Skill
 
-- Pre-handoff validation before sending work to `/devmode:reviewer`.
+- Pre-handoff validation before sending work to `devmode-reviewer`.
 - Build verification after implementation changes.
 - Lint and formatting enforcement before commits.
 - Type safety verification across changed files.
@@ -70,7 +70,7 @@ After 3 consecutive failed attempts at the same gate:
 
 ## Pre-Handoff Checklist
 
-Before handing off to `/devmode:reviewer`, verify ALL of the following:
+Before handing off to `devmode-reviewer`, verify ALL of the following:
 
 - [ ] All changed files pass formatting checks.
 - [ ] All changed files pass linting with zero warnings.

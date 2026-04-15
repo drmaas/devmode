@@ -1,6 +1,6 @@
 ---
-name: architect
 description: System design, boundary enforcement, tradeoff analysis, and structural decision-making. Load for architecture decisions, new module design, or cross-cutting concerns.
+user-invocable: false
 ---
 
 # Architect

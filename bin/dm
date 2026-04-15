@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# devmode CLI helper
-# Manages mode state in $CLAUDE_PLUGIN_DATA/mode.json
-# Never touches repo files.
+# devmode mode helper
+# Manages mode state outside repositories.
 
 set -euo pipefail
 
@@ -16,8 +15,11 @@ MODE_DESCRIPTIONS=(
   "directly implement the user's request"
 )
 
-# Resolve data directory: use CLAUDE_PLUGIN_DATA if set, else a sensible default
-DATA_DIR="${CLAUDE_PLUGIN_DATA:-${HOME}/.claude/plugins/data/devmode}"
+# Resolve data directory:
+# 1. Explicit devmode override
+# 2. Claude plugin data when running in a plugin context
+# 3. Standalone devmode data directory
+DATA_DIR="${DEVMODE_DATA_DIR:-${CLAUDE_PLUGIN_DATA:-${HOME}/.claude/devmode}}"
 MODE_FILE="${DATA_DIR}/mode.json"
 
 JSON_MODE=0
@@ -25,6 +27,7 @@ JSON_MODE=0
 usage() {
   cat <<'EOF'
 Usage:
+  dm [--json] current
   dm [--json] status
   dm [--json] list
   dm [--json] set <og|tdd|vibe|poc|sdd|brainstorm|oneoff>
@@ -32,6 +35,7 @@ Usage:
   dm help
 
 Examples:
+  dm current
   dm status
   dm list
   dm set sdd
@@ -87,7 +91,7 @@ cmd_status() {
   fi
 
   if [[ -z "${mode}" ]]; then
-    echo "Active mode: not set  (run: dm set <mode>)"
+    echo "Active mode: not set  (run: devmode set <mode>)"
   else
     # Find and print description
     local i
@@ -98,6 +102,24 @@ cmd_status() {
       fi
     done
     echo "Active mode: ${mode}"
+  fi
+}
+
+cmd_current() {
+  local mode
+  mode="$(current_mode || true)"
+
+  if (( JSON_MODE == 1 )); then
+    if [[ -z "${mode}" ]]; then
+      printf '{"ok":true,"mode":null}\n'
+    else
+      printf '{"ok":true,"mode":"%s"}\n' "$(json_escape "${mode}")"
+    fi
+    return
+  fi
+
+  if [[ -n "${mode}" ]]; then
+    printf '%s\n' "${mode}"
   fi
 }
 
@@ -247,6 +269,7 @@ main() {
   shift || true
 
   case "${cmd}" in
+    current) cmd_current ;;
     status)  cmd_status ;;
     list)    cmd_list ;;
     set)     cmd_set "${1:-}" ;;

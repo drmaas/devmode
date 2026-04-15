@@ -1,6 +1,6 @@
 ---
-name: tester
 description: Test strategy, test generation, coverage analysis, and verification discipline. Load when writing, updating, or analyzing tests.
+user-invocable: false
 ---
 
 # Tester

@@ -1,6 +1,6 @@
 ---
-name: librarian
 description: Codebase navigation, documentation lookup, dependency tracing, and knowledge retrieval. Load when working with unfamiliar modules, onboarding to new areas, or tracing data flows.
+user-invocable: false
 ---
 
 # Librarian

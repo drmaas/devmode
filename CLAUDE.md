@@ -20,19 +20,19 @@ Use this section to describe your product and constraints at a high level.
 
 ## 2) Team Model (separation of concerns)
 
-This template uses a **two-owner model** provided by the **devmode plugin**:
+This template uses a **two-owner model** provided by **devmode**:
 
-- `/devmode:builder` owns all implementation work.
-- `/devmode:reviewer` owns all review work.
+- `devmode-builder` owns all implementation work.
+- `devmode-reviewer` owns all review work.
 
 No other persistent owner roles are required.
 
 ### Routing Rules
 
-- Route implementation tasks to `/devmode:builder`.
-- Route correctness/design/security/architecture reviews to `/devmode:reviewer`.
-- `/devmode:builder` should rely on **skills** for specialized execution instead of proliferating specialist owners.
-- `/devmode:reviewer` must publish a clear verdict before final delivery.
+- Route implementation tasks to `devmode-builder`.
+- Route correctness/design/security/architecture reviews to `devmode-reviewer`.
+- `devmode-builder` should rely on **skills** for specialized execution instead of proliferating specialist owners.
+- `devmode-reviewer` must publish a clear verdict before final delivery.
 
 ### Communications Protocol
 
@@ -83,16 +83,16 @@ If the work needs a full spec, task decomposition, and traceability, prefer `sdd
 
 At the start of each coding session, the active owner must do one of the following before implementation:
 
-1. **Discover** the current development mode from `${CLAUDE_PLUGIN_DATA}/mode.json` (managed by the devmode plugin), or
+1. **Discover** the current development mode from `devmode mode status` or `${DEVMODE_DATA_DIR}/mode.json`, or
 2. **Ask** the user to pick a mode if no mode is discoverable (`/devmode:dm`).
 
 Never assume a mode silently.
 
-Preferred source: `${CLAUDE_PLUGIN_DATA}/mode.json` (set via `/devmode:dm` or `dm` CLI).
+Preferred source: `devmode mode status` (backed by `${DEVMODE_DATA_DIR}/mode.json`).
 
 ### Execution Continuity Rule (Ralph Loop)
 
-Agents should run in a Ralph Loop: continue iterating until the active goal is complete, verified, and either handed off (`/devmode:reviewer`) or delivered.
+Agents should run in a Ralph Loop: continue iterating until the active goal is complete, verified, and either handed off (`devmode-reviewer`) or delivered.
 
 - Do not stop at intermediate analysis-only states.
 - On failures, adjust approach and continue the loop.
@@ -124,28 +124,28 @@ When mode is `sdd`, follow this sequence:
 
 6. **Verification and review**
 	- Run required quality gates for the repository.
-	- Hand off to `/devmode:reviewer` with spec-to-implementation traceability (what requirement each change satisfies).
+	- Hand off to `devmode-reviewer` with spec-to-implementation traceability (what requirement each change satisfies).
 
 ---
 
 ## 5) Skills & Commands Policy
 
-- Skills are the preferred mechanism for specialization (all provided by the **devmode plugin**).
+- Skills are the preferred mechanism for specialization (installed by **devmode** into the target repo).
 - Keep active skill set minimal per step to conserve tokens.
 - Favor composable skills over adding new permanent owner roles.
-- Keep review responsibility centralized in `/devmode:reviewer` even when review-related skills are used.
+- Keep review responsibility centralized in `devmode-reviewer` even when review-related skills are used.
 
-### Plugin Skills (devmode)
+### Internal Skills (devmode)
 
 | Skill | Purpose | Load when... |
 | --- | --- | --- |
-| `/devmode:orchestrator` | Task decomposition, dependency ordering, handoff protocol | Multi-step or cross-module work |
-| `/devmode:librarian` | Codebase navigation, dependency tracing, knowledge retrieval | Unfamiliar modules, tracing data flows |
-| `/devmode:coder` | Implementation patterns, refactoring discipline, type safety | Any core coding work |
-| `/devmode:tester` | Test strategy, test generation, coverage analysis | Writing, updating, or analyzing tests |
-| `/devmode:gatekeeper` | Quality gate enforcement, verification sequencing | Pre-handoff validation |
-| `/devmode:architect` | System design, boundary enforcement, tradeoff analysis | Architecture decisions, new module design |
-| `/devmode:code-review` | Review methodology, severity classification, feedback format | Any code review task |
+| `devmode-orchestrator` | Task decomposition, dependency ordering, handoff protocol | Multi-step or cross-module work |
+| `devmode-librarian` | Codebase navigation, dependency tracing, knowledge retrieval | Unfamiliar modules, tracing data flows |
+| `devmode-coder` | Implementation patterns, refactoring discipline, type safety | Any core coding work |
+| `devmode-tester` | Test strategy, test generation, coverage analysis | Writing, updating, or analyzing tests |
+| `devmode-gatekeeper` | Quality gate enforcement, verification sequencing | Pre-handoff validation |
+| `devmode-architect` | System design, boundary enforcement, tradeoff analysis | Architecture decisions, new module design |
+| `devmode-code-review` | Review methodology, severity classification, feedback format | Any code review task |
 
 ### Optional Skills (separate plugins)
 
@@ -154,20 +154,20 @@ When mode is `sdd`, follow this sequence:
 | `ux-designer` | UI/UX patterns, accessibility, component design | `.claude/skills/ux-designer/` |
 | `playwright-cli` | Browser automation, E2E testing, screenshots | `.claude/skills/playwright-cli/` |
 
-Skills live in `devmode/skills/<name>/SKILL.md` and are auto-discoverable when the plugin is installed.
+Skills live in `skills/devmode-<name>/SKILL.md` in this repository and install into `.claude/skills/` in target repositories.
 
 ---
 
 ## 6) Owner Definitions
 
-### `/devmode:builder`
+### `devmode-builder`
 
-- **Source:** `devmode/agents/builder.md`
+- **Source:** `agents/devmode-builder.md`
 - **Goal:** Execute end-to-end implementation with skill-first workflow.
 
-### `/devmode:reviewer`
+### `devmode-reviewer`
 
-- **Source:** `devmode/agents/reviewer.md`
+- **Source:** `agents/devmode-reviewer.md`
 - **Goal:** Serve as sole review authority.
 - **Scope:** Reviews only; no implementation ownership.
 
@@ -179,6 +179,7 @@ When applying this template to a new repository:
 
 1. Fill in **Project Context**.
 2. Define concrete **quality gate commands** for this repo.
-3. Install the **devmode plugin** from `devmode/` (or from the plugin registry).
-4. Use `/devmode:dm` to set the active development mode.
-5. Add only the skills your team actually uses (optional: `ux-designer`, `playwright-cli`).
+3. Install the global **devmode** CLI with `./install.sh` (or your preferred wrapper).
+4. Run `devmode install <repo>` to write the `.claude/` assets into the target repository.
+5. Use `/devmode:dm` to set the active development mode.
+6. Add only the extra skills your team actually uses (optional: `ux-designer`, `playwright-cli`).
