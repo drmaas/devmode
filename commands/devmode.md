@@ -13,7 +13,7 @@ The user invoked `/devmode $ARGUMENTS`.
 Use the globally installed CLI:
 
 ```bash
-devmode mode ...
+devmode ...
 ```
 
 ## Instructions
@@ -22,16 +22,16 @@ devmode mode ...
 
 If `$ARGUMENTS` is non-empty, handle directly:
 
-- `set <mode>` -> run `devmode mode set <mode>` and confirm the switch. Done.
-- `status` -> run `devmode mode status` and display the result. Done.
-- `list` -> run `devmode mode list` and display the result. Done.
-- `explain <mode>` -> run `devmode mode explain <mode>` and display the full mode flow and validation expectations. Done.
+- `set <mode>` -> run `devmode set <mode>` and confirm the switch. Done.
+- `status` -> run `devmode status` and display the result. Done.
+- `list` -> run `devmode list` and display the result. Done.
+- `explain <mode>` -> run `devmode explain <mode>` and display the full mode flow and validation expectations. Done.
 
 If `$ARGUMENTS` is empty, proceed to Step 2.
 
 ### Step 2 - Show the mode picker
 
-1. Run `devmode mode --json status` to get the current mode.
+1. Run `devmode --json status` to get the current mode.
 2. Use the `ask_user` tool to present a single-select form:
 
 ```json
@@ -60,9 +60,9 @@ If `$ARGUMENTS` is empty, proceed to Step 2.
 }
 ```
 
-Set `default` to the current mode from `devmode mode --json status`. If no mode is set, omit `default`.
+Set `default` to the current mode from `devmode --json status`. If no mode is set, omit `default`.
 
-3. After the user selects, run `devmode mode set <selected-mode>`.
+3. After the user selects, run `devmode set <selected-mode>`.
 4. Confirm with a brief message: e.g., "Mode set to **sdd** (spec-driven development)."
 
 ### Step 3 - If user declines/cancels

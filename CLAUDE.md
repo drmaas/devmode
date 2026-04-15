@@ -83,12 +83,12 @@ If the work needs a full spec, task decomposition, and traceability, prefer `sdd
 
 At the start of each coding session, the active owner must do one of the following before implementation:
 
-1. **Discover** the current development mode from `devmode mode status` or `${DEVMODE_DATA_DIR}/mode.json`, or
+1. **Discover** the current development mode from `devmode status` or `${DEVMODE_DATA_DIR}/mode.json`, or
 2. **Ask** the user to pick a mode if no mode is discoverable (`/devmode`).
 
 Never assume a mode silently.
 
-Preferred source: `devmode mode status` (backed by `${DEVMODE_DATA_DIR}/mode.json`).
+Preferred source: `devmode status` (backed by `${DEVMODE_DATA_DIR}/mode.json`).
 
 ### Execution Continuity Rule (Ralph Loop)
 

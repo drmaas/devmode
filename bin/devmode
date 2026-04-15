@@ -33,11 +33,6 @@ Usage:
   devmode uninstall --global
   devmode hook inject-mode
   devmode hook ensure-mode
-  devmode mode current
-  devmode mode status
-  devmode mode list
-  devmode mode set <og|tdd|vibe|poc|sdd|brainstorm|oneoff>
-  devmode mode explain <og|tdd|vibe|poc|sdd|brainstorm|oneoff>
   devmode current
   devmode status
   devmode list
@@ -49,7 +44,7 @@ Examples:
   devmode install
   devmode uninstall
   devmode uninstall --global
-  devmode mode set og
+  devmode set og
   devmode status
   devmode hook inject-mode
 EOF
@@ -750,9 +745,6 @@ main() {
         ensure-mode) cmd_hook_ensure_mode ;;
         *) die "Unknown hook command '${hook_cmd}'" ;;
       esac
-      ;;
-    mode)
-      cmd_mode_dispatch "$@"
       ;;
     current|status|list|set|explain)
       cmd_mode_dispatch "${cmd}" "$@"
