@@ -25,7 +25,8 @@ If you already have the repository cloned, `./install.sh` still works.
 ## Install devmode into a repository
 
 ```bash
-devmode install /path/to/repo
+cd /path/to/repo
+devmode install
 ```
 
 If the target repo does not already have a `CLAUDE.md`, `devmode` creates one.
@@ -37,7 +38,8 @@ If the target repo already has a `CLAUDE.md`, `devmode` leaves it alone and writ
 Remove devmode from a repository:
 
 ```bash
-devmode uninstall /path/to/repo
+cd /path/to/repo
+devmode uninstall
 ```
 
 That removes the devmode-managed `.claude/` assets, removes the devmode hook entries from `.claude/settings.json`, and deletes `CLAUDE.md` only when it exactly matches the generated devmode template.
@@ -78,7 +80,8 @@ devmode status
 devmode list
 devmode set og
 devmode explain sdd
-devmode uninstall .
+devmode install
+devmode uninstall
 ```
 
 Implementation-oriented modes route through `devmode-builder` and `devmode-reviewer`. `brainstorm` stays non-coding.

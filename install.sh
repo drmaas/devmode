@@ -94,7 +94,8 @@ Installed devmode
 - home:   ${SHARE_DIR}
 
 Make sure ${BIN_DIR} is on your PATH, then run:
-  devmode install /path/to/repo
+  cd /path/to/repo
+  devmode install
 EOF
     ;;
   uninstall)

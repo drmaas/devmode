@@ -28,8 +28,8 @@ die() {
 usage() {
   cat <<'EOF'
 Usage:
-  devmode install [target-directory]
-  devmode uninstall [target-directory]
+  devmode install [directory]
+  devmode uninstall [directory]
   devmode uninstall --global
   devmode hook inject-mode
   devmode hook ensure-mode
@@ -46,8 +46,8 @@ Usage:
   devmode help
 
 Examples:
-  devmode install .
-  devmode uninstall .
+  devmode install
+  devmode uninstall
   devmode uninstall --global
   devmode mode set og
   devmode status
