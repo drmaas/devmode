@@ -1,6 +1,6 @@
 ---
 description: Switch the active development mode. Use when the user runs /devmode or asks to change, set, pick, or view the development mode. Shows a quick-pick submenu of modes (og, tdd, vibe, poc, sdd, brainstorm, oneoff).
-argument-hint: [set <og|tdd|vibe|poc|sdd|brainstorm|oneoff> | explain <og|tdd|vibe|poc|sdd|brainstorm|oneoff> | status | list]
+argument-hint: [set [-g] <og|tdd|vibe|poc|sdd|brainstorm|oneoff> | explain <og|tdd|vibe|poc|sdd|brainstorm|oneoff> | status | list]
 allowed-tools:
   - Bash
   - ask_user
@@ -22,7 +22,8 @@ devmode ...
 
 If `$ARGUMENTS` is non-empty, handle directly:
 
-- `set <mode>` -> run `devmode set <mode>` and confirm the switch. Done.
+- `set <mode>` -> run `devmode set <mode>` (sets for the current repository) and confirm the switch. Done.
+- `set -g <mode>` -> run `devmode set -g <mode>` (sets globally) and confirm the switch. Done.
 - `status` -> run `devmode status` and display the result. Done.
 - `list` -> run `devmode list` and display the result. Done.
 - `explain <mode>` -> run `devmode explain <mode>` and display the full mode flow and validation expectations. Done.
@@ -62,8 +63,8 @@ If `$ARGUMENTS` is empty, proceed to Step 2.
 
 Set `default` to the current mode from `devmode --json status`. If no mode is set, omit `default`.
 
-3. After the user selects, run `devmode set <selected-mode>`.
-4. Confirm with a brief message: e.g., "Mode set to **sdd** (spec-driven development)."
+3. After the user selects, run `devmode set <selected-mode>` (sets for current repository).
+4. Confirm with a brief message: e.g., "Mode set to **sdd** (spec-driven development) [local]."
 
 ### Step 3 - If user declines/cancels
 

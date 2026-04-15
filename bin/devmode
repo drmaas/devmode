@@ -36,15 +36,19 @@ Usage:
   devmode current
   devmode status
   devmode list
-  devmode set <mode>
+  devmode set [-g] <mode>
   devmode explain <mode>
   devmode help
+
+Options:
+  -g, --global  Apply to global config instead of current repository
 
 Examples:
   devmode install
   devmode uninstall
   devmode uninstall --global
   devmode set og
+  devmode set -g og
   devmode status
   devmode hook inject-mode
 EOF
@@ -302,12 +306,54 @@ ensure_data_dir() {
   mkdir -p "${DATA_DIR}"
 }
 
-current_mode() {
-  if [[ -f "${MODE_FILE}" ]]; then
-    grep -Eo '"mode"\s*:\s*"[^"]*"' "${MODE_FILE}" \
+git_root() {
+  git rev-parse --show-toplevel 2>/dev/null || true
+}
+
+local_mode_file() {
+  local root
+  root="$(git_root)"
+  if [[ -n "${root}" ]]; then
+    echo "${root}/.git/devmode/mode.json"
+  fi
+}
+
+read_mode_from_file() {
+  local file="${1:-}"
+  if [[ -n "${file}" && -f "${file}" ]]; then
+    grep -Eo '"mode"\s*:\s*"[^"]*"' "${file}" \
       | head -n1 \
       | grep -Eo '"[^"]*"$' \
       | tr -d '"' || true
+  fi
+}
+
+current_mode() {
+  local local_file mode
+  local_file="$(local_mode_file)"
+  if [[ -n "${local_file}" ]]; then
+    mode="$(read_mode_from_file "${local_file}")"
+    if [[ -n "${mode}" ]]; then
+      printf '%s' "${mode}"
+      return
+    fi
+  fi
+  read_mode_from_file "${MODE_FILE}"
+}
+
+current_mode_scope() {
+  local local_file mode
+  local_file="$(local_mode_file)"
+  if [[ -n "${local_file}" ]]; then
+    mode="$(read_mode_from_file "${local_file}")"
+    if [[ -n "${mode}" ]]; then
+      echo "local"
+      return
+    fi
+  fi
+  mode="$(read_mode_from_file "${MODE_FILE}")"
+  if [[ -n "${mode}" ]]; then
+    echo "global"
   fi
 }
 
@@ -321,14 +367,15 @@ contains_mode() {
 }
 
 cmd_mode_status() {
-  local mode
+  local mode scope
   mode="$(current_mode || true)"
+  scope="$(current_mode_scope || true)"
 
   if (( JSON_MODE == 1 )); then
     if [[ -z "${mode}" ]]; then
-      printf '{"ok":true,"mode":null,"modeFile":"%s"}\n' "$(json_escape "${MODE_FILE}")"
+      printf '{"ok":true,"mode":null,"scope":null,"modeFile":"%s"}\n' "$(json_escape "${MODE_FILE}")"
     else
-      printf '{"ok":true,"mode":"%s","modeFile":"%s"}\n' "$(json_escape "${mode}")" "$(json_escape "${MODE_FILE}")"
+      printf '{"ok":true,"mode":"%s","scope":"%s","modeFile":"%s"}\n' "$(json_escape "${mode}")" "$(json_escape "${scope}")" "$(json_escape "${MODE_FILE}")"
     fi
     return
   fi
@@ -341,12 +388,12 @@ cmd_mode_status() {
   local i
   for i in "${!MODES[@]}"; do
     if [[ "${MODES[$i]}" == "${mode}" ]]; then
-      echo "Active mode: ${mode}  — ${MODE_DESCRIPTIONS[$i]}"
+      echo "Active mode: ${mode}  — ${MODE_DESCRIPTIONS[$i]}  [${scope}]"
       return
     fi
   done
 
-  echo "Active mode: ${mode}"
+  echo "Active mode: ${mode}  [${scope}]"
 }
 
 cmd_mode_current() {
@@ -368,12 +415,14 @@ cmd_mode_current() {
 }
 
 cmd_mode_list() {
-  local current
+  local current scope
   current="$(current_mode || true)"
+  scope="$(current_mode_scope || true)"
 
   if (( JSON_MODE == 1 )); then
-    printf '{"ok":true,"mode":%s,"modes":[' \
-      "$([ -n "${current}" ] && printf '"%s"' "$(json_escape "${current}")" || echo 'null')"
+    printf '{"ok":true,"mode":%s,"scope":%s,"modes":[' \
+      "$([ -n "${current}" ] && printf '"%s"' "$(json_escape "${current}")" || echo 'null')" \
+      "$([ -n "${scope}" ] && printf '"%s"' "$(json_escape "${scope}")" || echo 'null')"
     local i
     for i in "${!MODES[@]}"; do
       (( i > 0 )) && printf ','
@@ -391,32 +440,61 @@ cmd_mode_list() {
     [[ "${MODES[$i]}" == "${current}" ]] && marker="*"
     printf "  [%s] %-10s — %s\n" "${marker}" "${MODES[$i]}" "${MODE_DESCRIPTIONS[$i]}"
   done
+  [[ -n "${current}" ]] && echo "  (* = active, scope: ${scope})"
 }
 
 cmd_mode_set() {
+  local global_flag=0
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -g|--global) global_flag=1; shift ;;
+      *) break ;;
+    esac
+  done
+
   local new_mode="${1:-}"
-  [[ -n "${new_mode}" ]] || die "Usage: devmode set <mode>"
+  [[ -n "${new_mode}" ]] || die "Usage: devmode set [-g] <mode>"
   contains_mode "${new_mode}" || die "Invalid mode '${new_mode}'. Valid: ${MODES[*]}"
 
-  ensure_data_dir
-  local old_mode
-  old_mode="$(current_mode || true)"
+  local target_file scope_label
+  if (( global_flag == 1 )); then
+    target_file="${MODE_FILE}"
+    scope_label="global"
+    ensure_data_dir
+  else
+    local root
+    root="$(git_root)"
+    if [[ -n "${root}" ]]; then
+      target_file="${root}/.git/devmode/mode.json"
+      scope_label="local"
+      mkdir -p "$(dirname "${target_file}")"
+    else
+      target_file="${MODE_FILE}"
+      scope_label="global"
+      ensure_data_dir
+      (( JSON_MODE == 0 )) && echo "Note: not in a git repository; setting mode globally." >&2
+    fi
+  fi
 
-  printf '{"mode":"%s"}\n' "${new_mode}" > "${MODE_FILE}"
+  local old_mode
+  old_mode="$(read_mode_from_file "${target_file}" || true)"
+
+  printf '{"mode":"%s"}\n' "${new_mode}" > "${target_file}"
 
   if (( JSON_MODE == 1 )); then
-    printf '{"ok":true,"previousMode":%s,"mode":"%s"}\n' \
+    printf '{"ok":true,"previousMode":%s,"mode":"%s","scope":"%s"}\n' \
       "$([ -n "${old_mode}" ] && printf '"%s"' "$(json_escape "${old_mode}")" || echo 'null')" \
-      "$(json_escape "${new_mode}")"
+      "$(json_escape "${new_mode}")" \
+      "${scope_label}"
     return
   fi
 
   if [[ -n "${old_mode}" && "${old_mode}" != "${new_mode}" ]]; then
-    echo "Switched mode: ${old_mode} -> ${new_mode}"
+    echo "Switched mode (${scope_label}): ${old_mode} -> ${new_mode}"
   elif [[ -z "${old_mode}" ]]; then
-    echo "Set mode: ${new_mode}"
+    echo "Set mode (${scope_label}): ${new_mode}"
   else
-    echo "Mode unchanged: ${new_mode}"
+    echo "Mode unchanged (${scope_label}): ${new_mode}"
   fi
 }
 
@@ -521,7 +599,7 @@ cmd_mode_dispatch() {
     current) cmd_mode_current ;;
     status)  cmd_mode_status ;;
     list)    cmd_mode_list ;;
-    set)     cmd_mode_set "${1:-}" ;;
+    set)     cmd_mode_set "$@" ;;
     explain) cmd_mode_explain "${1:-}" ;;
     help|-h|--help) usage ;;
     *) die "Unknown mode command '${subcommand}'. Run 'devmode help'." ;;
