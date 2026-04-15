@@ -2,7 +2,8 @@
 
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_SOURCE="${BASH_SOURCE[0]:-$0}"
+REPO_ROOT="$(cd "$(dirname "${SCRIPT_SOURCE}")" && pwd)"
 PREFIX="${PREFIX:-${HOME}/.local}"
 BIN_DIR="${BIN_DIR:-${PREFIX}/bin}"
 SHARE_DIR="${SHARE_DIR:-${PREFIX}/share/devmode}"

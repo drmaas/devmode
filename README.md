@@ -18,6 +18,12 @@ Install it directly:
 curl -fsSL https://raw.githubusercontent.com/drmaas/devmode/refs/heads/main/install.sh | bash
 ```
 
+or with `wget`:
+
+```bash
+wget -qO- https://raw.githubusercontent.com/drmaas/devmode/refs/heads/main/install.sh | bash
+```
+
 That installs a global `devmode` wrapper and a local share directory under `~/.local` by default.
 
 If you already have the repository cloned, `./install.sh` still works.
@@ -60,6 +66,12 @@ Or from the raw installer:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/drmaas/devmode/refs/heads/main/install.sh | bash -s uninstall
+```
+
+or with `wget`:
+
+```bash
+wget -qO- https://raw.githubusercontent.com/drmaas/devmode/refs/heads/main/install.sh | bash -s uninstall
 ```
 
 ## Use devmode
