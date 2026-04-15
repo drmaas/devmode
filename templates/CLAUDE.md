@@ -1,6 +1,6 @@
 # CLAUDE.md - devmode
 
-This repository uses **devmode** to control how Claude Code executes work.
+This repository uses **devmode** to control how the active coding harness executes work.
 
 ## Core command
 

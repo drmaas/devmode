@@ -180,6 +180,6 @@ When applying this template to a new repository:
 1. Fill in **Project Context**.
 2. Define concrete **quality gate commands** for this repo.
 3. Install the global **devmode** CLI with `curl -fsSL https://raw.githubusercontent.com/drmaas/devmode/refs/heads/main/install.sh | bash`.
-4. In the target repository, run `devmode install` to write the `.claude/` assets.
+4. In the target repository, run `devmode install` to write the shared workspace assets.
 5. Use `/devmode` to set the active development mode.
 6. Add only the extra separate-plugin skills your team actually uses (optional: `playwright-cli`).

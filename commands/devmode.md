@@ -71,10 +71,10 @@ Print the current mode and exit without making changes.
 
 ## Workflow After Mode Selection
 
-Once a mode is set, Claude automatically follows the selected workflow:
+Once a mode is set, the active coding harness automatically follows the selected workflow:
 
 - `brainstorm` -> stay in discussion/ideation mode and do not write code
-- `oneoff`, `og`, `tdd`, `vibe`, `poc`, `sdd` -> Claude routes implementation to `devmode-builder`
+- `oneoff`, `og`, `tdd`, `vibe`, `poc`, `sdd` -> the harness routes implementation to `devmode-builder`
 - when implementation is ready -> builder delegates to `devmode-reviewer`
 - if reviewer requests changes -> builder iterates and resubmits
 

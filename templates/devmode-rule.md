@@ -1,6 +1,6 @@
 # devmode rule
 
-This repository uses **devmode** for Claude Code workflow control.
+This repository uses **devmode** for coding-harness workflow control.
 
 - Set or inspect the current mode with `/devmode`.
 - Implementation work routes to `devmode-builder`.

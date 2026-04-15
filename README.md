@@ -1,11 +1,11 @@
 # devmode
 
-`devmode` is a standalone Claude Code workflow tool.
+`devmode` is a standalone workflow tool for major AI coding harnesses.
 
 It gives you:
 
 - a global `devmode` CLI on `PATH`
-- a repo installer that drops the needed `.claude/` assets into any repository
+- a repo installer that drops the needed workspace assets into any repository
 - mode-based execution (`og`, `tdd`, `vibe`, `poc`, `sdd`, `brainstorm`, `oneoff`)
 - builder/reviewer routing with persistent mode state outside the repo
 - a bundled `devmode-ux-designer` skill for frontend, accessibility, and other user-facing work
@@ -29,7 +29,7 @@ cd /path/to/repo
 devmode install
 ```
 
-If the target repo does not already have a `CLAUDE.md`, `devmode` creates one.
+If the target repo does not already have a `CLAUDE.md`, `devmode` creates one as the project instruction file.
 
 If the target repo already has a `CLAUDE.md`, `devmode` leaves it alone and writes `.claude/rules/devmode.md` instead.
 
@@ -42,7 +42,7 @@ cd /path/to/repo
 devmode uninstall
 ```
 
-That removes the devmode-managed `.claude/` assets, removes the devmode hook entries from `.claude/settings.json`, and deletes `CLAUDE.md` only when it exactly matches the generated devmode template.
+That removes the devmode-managed workspace assets, removes the devmode hook entries from `.claude/settings.json`, and deletes `CLAUDE.md` only when it exactly matches the generated devmode template.
 
 Remove the global CLI install:
 
@@ -88,7 +88,7 @@ Implementation-oriented modes route through `devmode-builder` and `devmode-revie
 
 ## What gets installed into the target repo
 
-`devmode install` writes:
+`devmode install` writes the shared workspace layout used by major coding harnesses:
 
 - `.claude/commands/devmode.md`
 - `.claude/skills/devmode-*`
@@ -110,3 +110,4 @@ This repository is the product source:
 
 - Mode state is stored outside repositories.
 - Installed hooks call the global `devmode` binary, so there is no plugin-root path resolution problem anymore.
+- The on-disk layout uses `.claude/` and `CLAUDE.md` because those conventions are widely honored across major coding harnesses.
