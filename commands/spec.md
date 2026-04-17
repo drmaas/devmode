@@ -5,17 +5,11 @@ argument-hint: [--no-loop] [task description]
 
 Run the devmode `/spec` workflow.
 
-First, parse loop flags and objective from the invocation:
+Before proceeding, check `$ARGUMENTS` for flags:
 
-```!
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/parse-loop-args.sh" $ARGUMENTS
-```
-
-Treat parser output as authoritative:
-
-- `loop_mode=loop`: use standard Ralph Loop iteration.
-- `loop_mode=no-loop`: run a single pass and hand off without iterative loop behavior.
-- `task_objective=...`: use this as the objective text (do not treat `--no-loop` as objective content).
+- If `--no-loop` is present: run a single pass and hand off without iterating.
+- Otherwise: use standard Ralph Loop iteration.
+- Strip `--no-loop` from `$ARGUMENTS` and treat the remainder as the task objective.
 
 Use `devmode-builder` as the implementation owner with this contract:
 
@@ -27,4 +21,3 @@ Use `devmode-builder` as the implementation owner with this contract:
 
 Load `devmode-orchestrator` and `devmode-architect` early, then `devmode-coder`, `devmode-tester`, and `devmode-gatekeeper` for execution and validation.
 
-If `task_objective` is non-empty, treat it as the active task objective.
