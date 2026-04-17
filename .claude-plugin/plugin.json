@@ -1,0 +1,17 @@
+{
+  "name": "devmode",
+  "version": "2.0.0",
+  "description": "Plugin-first workflow system for planning, implementation, testing, and review using commands, agents, and skills.",
+  "author": {
+    "name": "drmaas"
+  },
+  "repository": "https://github.com/drmaas/devmode",
+  "license": "MIT",
+  "keywords": [
+    "workflow",
+    "agents",
+    "skills",
+    "review",
+    "tdd"
+  ]
+}

@@ -1,125 +1,57 @@
 # devmode
 
-`devmode` is a standalone workflow tool for major AI coding harnesses.
+devmode is a plugin-first workflow toolkit for Claude Code.
 
-It gives you:
+This repository is the plugin. It does not require a global `devmode` CLI, mode files, or repo-install script.
 
-- a global `devmode` CLI on `PATH`
-- a repo installer that drops the needed workspace assets into any repository
-- mode-based execution (`og`, `tdd`, `vibe`, `poc`, `sdd`, `brainstorm`, `oneoff`)
-- builder/reviewer routing with persistent mode state outside the repo
-- a bundled `devmode-ux-designer` skill for frontend, accessibility, and other user-facing work
+## What devmode provides
 
-## Install the CLI
+- workflow entrypoint commands instead of a stateful mode switcher
+- stable owner agents for implementation and review
+- reusable skills for planning, architecture, coding, testing, validation, and UX
 
-Install it directly:
+## Install
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/drmaas/devmode/refs/heads/main/install.sh | bash
-```
-
-or with `wget`:
+Install from a plugin source:
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/drmaas/devmode/refs/heads/main/install.sh | bash
+/plugin install devmode@claude-code-marketplace
 ```
 
-That installs a global `devmode` wrapper and a local share directory under `~/.local` by default.
+For local development, load this repository as a plugin directory.
 
-If you already have the repository cloned, `./install.sh` still works.
+## Workflow Commands
 
-## Install devmode into a repository
+Each workflow is an explicit command. No global active mode is required.
 
-```bash
-cd /path/to/repo
-devmode install
-```
+- `/build` - default implementation flow (plan -> implement -> validate -> review)
+- `/tdd` - tests-first implementation flow
+- `/spec` - requirements/spec/task-driven implementation flow
+- `/spike` - exploratory implementation flow, not production-ready by default
+- `/brainstorm` - non-coding exploration and option analysis
 
-If the target repo does not already have a `CLAUDE.md`, `devmode` creates one as the project instruction file.
+## Architecture
 
-If the target repo already has a `CLAUDE.md`, `devmode` leaves it alone and writes `.claude/rules/devmode.md` instead.
+- commands choose the workflow contract for the current task
+- `devmode-builder` owns implementation
+- `devmode-reviewer` owns review decisions
+- skills provide specialized execution guidance
 
-## Uninstall
+## Repository Layout
 
-Remove devmode from a repository:
+- `.claude-plugin/plugin.json` - plugin manifest
+- `commands/` - workflow entrypoints
+- `agents/` - owner agents
+- `skills/` - reusable execution skills
+- `CLAUDE.md` - repository policy and contributor guidance
 
-```bash
-cd /path/to/repo
-devmode uninstall
-```
+## Migration Notes (v2)
 
-That removes the devmode-managed workspace assets, removes the devmode hook entries from `.claude/settings.json`, and deletes `CLAUDE.md` only when it exactly matches the generated devmode template.
+This version intentionally removes the legacy model:
 
-Remove the global CLI install:
+- removed global `devmode` shell script
+- removed repo installer and template-copy flow
+- removed persistent mode state and hook-based injection
+- removed `/devmode set|status|list|explain`
 
-```bash
-devmode uninstall --global
-```
-
-You can also remove the global install directly from this repository:
-
-```bash
-./install.sh uninstall
-```
-
-Or from the raw installer:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/drmaas/devmode/refs/heads/main/install.sh | bash -s uninstall
-```
-
-or with `wget`:
-
-```bash
-wget -qO- https://raw.githubusercontent.com/drmaas/devmode/refs/heads/main/install.sh | bash -s uninstall
-```
-
-## Use devmode
-
-Inside an installed repository:
-
-```text
- /devmode
- /devmode status
- /devmode list
- /devmode set oneoff
-```
-
-From the shell:
-
-```bash
-devmode status
-devmode list
-devmode set og
-devmode explain sdd
-devmode install
-devmode uninstall
-```
-
-Implementation-oriented modes route through `devmode-builder` and `devmode-reviewer`. `brainstorm` stays non-coding.
-
-## What gets installed into the target repo
-
-`devmode install` writes the shared workspace layout used by major coding harnesses:
-
-- `.claude/commands/devmode.md`
-- `.claude/skills/devmode-*`
-- `.claude/agents/devmode-*.md`
-- `.claude/settings.json` hook entries that call the global `devmode` CLI
-- `CLAUDE.md` or `.claude/rules/devmode.md`
-
-## Repository layout
-
-This repository is the product source:
-
-- `bin/` - global CLI
-- `commands/` - installed project command source
-- `skills/` - installed skill source, including bundled optional skills such as `devmode-ux-designer`
-- `agents/` - installed subagent source
-- `templates/` - generated instruction files for target repos
-
-## Notes
-
-- Mode state is stored outside repositories.
-- Installed hooks call the global `devmode` binary, so there is no plugin-root path resolution problem anymore.
-- The on-disk layout uses `.claude/` and `CLAUDE.md` because those conventions are widely honored across major coding harnesses.
+Use explicit workflow commands per task instead.

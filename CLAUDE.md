@@ -79,16 +79,17 @@ When mode is `og`, add a short planning pass before coding:
 
 If the work needs a full spec, task decomposition, and traceability, prefer `sdd` instead of overloading `og`.
 
-### Mode Discovery Rule (session start)
+### Workflow Selection Rule (session start)
 
-At the start of each coding session, the active owner must do one of the following before implementation:
+At the start of each coding session, select an explicit workflow command before implementation:
 
-1. **Discover** the current development mode from `devmode status` or `${DEVMODE_DATA_DIR}/mode.json`, or
-2. **Ask** the user to pick a mode if no mode is discoverable (`/devmode`).
+1. `/build` for default implementation,
+2. `/tdd` for tests-first,
+3. `/spec` for spec-driven work,
+4. `/spike` for exploratory implementation,
+5. `/brainstorm` for non-coding exploration.
 
-Never assume a mode silently.
-
-Preferred source: `devmode status` (backed by `${DEVMODE_DATA_DIR}/mode.json`).
+Do not rely on global mode state.
 
 ### Execution Continuity Rule (Ralph Loop)
 
@@ -103,28 +104,28 @@ Agents should run in a Ralph Loop: continue iterating until the active goal is c
 When mode is `sdd`, follow this sequence:
 
 1. **Requirements capture**
-	- Extract explicit goals, constraints, and non-goals.
-	- Record acceptance criteria in testable language.
+   - Extract explicit goals, constraints, and non-goals.
+   - Record acceptance criteria in testable language.
 
 2. **Specification drafting**
-	- Produce a concise spec with: scope, interfaces/contracts, data model impacts, edge cases, and validation strategy.
-	- Resolve ambiguities before coding.
+   - Produce a concise spec with: scope, interfaces/contracts, data model impacts, edge cases, and validation strategy.
+   - Resolve ambiguities before coding.
 
 3. **Plan formation**
-	- Convert the spec into ordered implementation phases.
-	- Identify dependencies and verification checkpoints per phase.
+   - Convert the spec into ordered implementation phases.
+   - Identify dependencies and verification checkpoints per phase.
 
 4. **Task decomposition**
-	- Break phases into atomic tasks with clear completion criteria.
-	- Track task state (pending/in progress/completed) and keep exactly one task in progress.
+   - Break phases into atomic tasks with clear completion criteria.
+   - Track task state (pending/in progress/completed) and keep exactly one task in progress.
 
 5. **Implementation against tasks**
-	- Implement strictly against current task scope.
-	- Update the spec/plan/tasks when scope changes; do not proceed with stale requirements.
+   - Implement strictly against current task scope.
+   - Update the spec/plan/tasks when scope changes; do not proceed with stale requirements.
 
 6. **Verification and review**
-	- Run required quality gates for the repository.
-	- Hand off to `devmode-reviewer` with spec-to-implementation traceability (what requirement each change satisfies).
+   - Run required quality gates for the repository.
+   - Hand off to `devmode-reviewer` with spec-to-implementation traceability (what requirement each change satisfies).
 
 ---
 
@@ -154,7 +155,7 @@ When mode is `sdd`, follow this sequence:
 | --- | --- | --- |
 | `playwright-cli` | Browser automation, E2E testing, screenshots | `.claude/skills/playwright-cli/` |
 
-Internal skills live in `skills/devmode-<name>/SKILL.md` in this repository and install into `.claude/skills/` in target repositories.
+Internal skills live in `skills/devmode-<name>/SKILL.md` in this repository and are auto-discovered when the plugin is installed.
 
 ---
 
@@ -179,7 +180,6 @@ When applying this template to a new repository:
 
 1. Fill in **Project Context**.
 2. Define concrete **quality gate commands** for this repo.
-3. Install the global **devmode** CLI with `curl -fsSL https://raw.githubusercontent.com/drmaas/devmode/refs/heads/main/install.sh | bash`.
-4. In the target repository, run `devmode install` to write the shared workspace assets.
-5. Use `/devmode` to set the active development mode.
-6. Add only the extra separate-plugin skills your team actually uses (optional: `playwright-cli`).
+3. Install this plugin through your plugin installation flow.
+4. Use explicit workflow commands (`/build`, `/tdd`, `/spec`, `/spike`, `/brainstorm`) per task.
+5. Add only the extra separate-plugin skills your team actually uses (optional: `playwright-cli`).
